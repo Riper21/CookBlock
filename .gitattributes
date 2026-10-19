@@ -1,0 +1,11 @@
+# Правила окончаний строк: скрипты cmd требуют DOS CRLF (AGENTS.md, Правило 8),
+# unix-скрипты - строго LF, иначе bash падает на \r.
+* text=auto
+*.sh text eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.wav binary
+*.db binary
