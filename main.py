@@ -1,5 +1,9 @@
 """
 Главная точка входа для запуска бота «Пищеблок» (Диетолог-Нутрициолог и Семейный шеф-повар).
+
+Запуск:            py main.py
+Только проверка
+конфигурации:      py main.py --check
 """
 
 import asyncio
@@ -11,6 +15,7 @@ from aiogram.client.default import DefaultBotProperties
 
 import config
 import database
+from config import validate_config
 from handlers import (
     common,
     profile,
@@ -40,6 +45,25 @@ logging.basicConfig(
 logger = logging.getLogger("FoodChefBot")
 
 
+def run_preflight() -> bool:
+    """Предполётная проверка настроек: внятные сообщения вместо трейсбеков."""
+    problems = validate_config()
+    if problems:
+        print("=" * 64)
+        print("  БОТ НЕ ЗАПУЩЕН - не хватает настроек в файле .env")
+        print("=" * 64)
+        for i, problem in enumerate(problems, start=1):
+            print(f"\n  Проблема {i}: {problem}")
+        print("\n  Что делать:")
+        print("  1. Откройте файл .env в папке проекта (рядом с main.py).")
+        print("     Если его нет - скопируйте .env.example и переименуйте в .env.")
+        print("  2. Впишите TELEGRAM_BOT_TOKEN и ключ нейросети.")
+        print("  3. Пошаговая инструкция: ИНСТРУКЦИЯ_ПОЛЬЗОВАТЕЛЯ.md, раздел «Настройка».")
+        print("=" * 64)
+        return False
+    return True
+
+
 async def main():
     logger.info("Инициализация базы данных...")
     await database.init_db()
@@ -50,11 +74,19 @@ async def main():
         from aiogram.client.session.aiohttp import AiohttpSession
         session = AiohttpSession(proxy=config.PROXY_URL.strip())
 
-    bot = Bot(
-        token=config.TELEGRAM_BOT_TOKEN,
-        session=session,
-        default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN)
-    )
+    try:
+        bot = Bot(
+            token=config.TELEGRAM_BOT_TOKEN,
+            session=session,
+            default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN)
+        )
+    except Exception as e:
+        logger.error(f"Не удалось создать бота - неверный TELEGRAM_BOT_TOKEN: {e}")
+        print("=" * 64)
+        print("  TELEGRAM_BOT_TOKEN отклонен Telegram. Скорее всего токен скопирован")
+        print("  не полностью или отозван. Получите новый в @BotFather (/mybots).")
+        print("=" * 64)
+        return
 
     # Регистрация системного меню команд Telegram (синяя кнопка "Меню" внизу слева)
     from aiogram.types import BotCommand
@@ -97,7 +129,16 @@ async def main():
 
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except (KeyboardInterrupt, SystemExit):
-        logger.info("Бот остановлен.")
+    if "--check" in sys.argv:
+        # Режим проверки настроек без запуска бота (для диагностики и CI)
+        if run_preflight():
+            print("OK: конфигурация в порядке, бот готов к запуску.")
+        else:
+            sys.exit(1)
+    else:
+        if not run_preflight():
+            sys.exit(1)
+        try:
+            asyncio.run(main())
+        except (KeyboardInterrupt, SystemExit):
+            logger.info("Бот остановлен.")

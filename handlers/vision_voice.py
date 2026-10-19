@@ -10,6 +10,7 @@ import logging
 from aiogram import Router, F, types
 from aiogram.filters import Command
 from aiogram.exceptions import TelegramBadRequest
+from config import WHISPER_MODEL
 from database import get_user_profile, add_food_log
 from keyboards import get_main_keyboard, get_cancel_keyboard, get_vision_log_keyboard
 import llm_service
@@ -261,8 +262,8 @@ async def handle_voice_message(message: types.Message):
 
             await message.bot.download(voice, destination=tmp_path)
 
-            # Локальная модель tiny (быстрая и компактная)
-            whisper_model = WhisperModel("tiny", device="cpu", compute_type="int8")
+            # Локальная модель (дефолт tiny - быстрая и компактная; настраивается WHISPER_MODEL в .env)
+            whisper_model = WhisperModel(WHISPER_MODEL, device="cpu", compute_type="int8")
             segments, _ = whisper_model.transcribe(tmp_path, language="ru")
             recognized_text = " ".join([seg.text for seg in segments]).strip()
 

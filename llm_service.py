@@ -13,7 +13,7 @@ import logging
 from typing import Dict, Any, List, Optional
 from openai import OpenAI
 import httpx
-from config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, PROXY_URL
+from config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, LLM_TIMEOUT, PROXY_URL
 from nutrition import get_random_wish
 import database
 
@@ -23,9 +23,9 @@ logger = logging.getLogger(__name__)
 def get_llm_client() -> OpenAI:
     """Создает клиент OpenAI для вызова DeepSeek или Gemini."""
     if PROXY_URL and PROXY_URL.strip():
-        http_client = httpx.Client(proxy=PROXY_URL.strip(), timeout=60.0)
+        http_client = httpx.Client(proxy=PROXY_URL.strip(), timeout=LLM_TIMEOUT)
         return OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL, http_client=http_client)
-    return OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL, timeout=60.0)
+    return OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL, timeout=LLM_TIMEOUT)
 
 
 def get_gender_context(gender: str) -> Dict[str, str]:
@@ -729,6 +729,24 @@ async def analyze_food_photo(image_bytes: bytes, profile: Dict[str, Any]) -> Dic
         content = response.choices[0].message.content or ""
         return parse_vision_response(content)
     except Exception as e:
+        err_text = str(e).lower()
+        # Модель без Vision: понятное объяснение вместо «не удалось разобрать снимок»
+        if any(marker in err_text for marker in ("image", "vision", "multimodal", "not support", "unsupported", "invalid_request_error")):
+            return {
+                "is_food": False,
+                "dish_name": "Модель без поддержки фото",
+                "weight_g": 0.0,
+                "calories": 0.0,
+                "protein": 0.0,
+                "fat": 0.0,
+                "carbs": 0.0,
+                "components": [],
+                "comment": (
+                    "Ваша модель нейросети (LLM_MODEL в файле .env) не умеет анализировать изображения. "
+                    "Фото-разбор блюд работает только с мультимодальной (Vision) моделью. "
+                    "Все текстовые функции бота работают в полном объеме: попробуйте кнопку «📊 Рассчитать КБЖУ»."
+                )
+            }
         logger.error(f"Ошибка вызова LLM Vision: {e}", exc_info=True)
         return {
             "is_food": False,

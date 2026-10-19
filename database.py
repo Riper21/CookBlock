@@ -12,6 +12,8 @@ from config import DB_PATH
 
 async def init_db():
     """Инициализация таблиц базы данных и выполнение миграций."""
+    # Родительская папка могла быть переопределена через DB_PATH (тесты, Docker)
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     async with aiosqlite.connect(DB_PATH) as db:
         # 1. Таблица профилей пользователей
         await db.execute("""

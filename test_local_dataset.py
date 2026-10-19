@@ -19,6 +19,7 @@ if sys.platform == "win32":
 
 import database
 import nutrition
+from config import WHISPER_MODEL
 
 
 async def test_whisper_offline():
@@ -27,8 +28,8 @@ async def test_whisper_offline():
     assert os.path.exists(audio_path), f"Аудиофайл не найден: {audio_path}"
 
     from faster_whisper import WhisperModel
-    print("Запуск локальной модели Whisper (tiny, CPU, int8)...")
-    model = WhisperModel("tiny", device="cpu", compute_type="int8")
+    print(f"Запуск локальной модели Whisper ({WHISPER_MODEL}, CPU, int8)...")
+    model = WhisperModel(WHISPER_MODEL, device="cpu", compute_type="int8")
     segments, info = model.transcribe(audio_path, language="ru")
     recognized_text = " ".join([s.text for s in segments]).strip().lower()
 
