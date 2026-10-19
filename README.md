@@ -103,10 +103,12 @@ copy .env.example .env   # затем впишите ключи
 ## 🧪 Тесты
 
 ```powershell
+.venv\Scripts\python.exe -m pytest tests -q      # основной прогон: 47 тестов, 0 сети и 0 токенов
 .venv\Scripts\python.exe test_local_dataset.py   # офлайн: Whisper, БД, формулы, дата-сет (0 токенов)
 .venv\Scripts\python.exe test_bot_core.py        # интеграционный набор (0 токенов)
-.venv\Scripts\python.exe -m pytest tests -q      # формализованные pytest-сьюты
 ```
+
+CI (`.github/workflows/ci.yml`) автоматически повторяет pytest и смоук `main.py --check` на ubuntu/windows при каждом пуше.
 
 ---
 
@@ -134,12 +136,16 @@ copy .env.example .env   # затем впишите ключи
 ├── scripts/
 │   └── unix/run.sh           # Установка+запуск на Linux/macOS
 ├── tests/                    # Pytest-сьюты (оффлайн, с моками LLM)
+├── .github/workflows/ci.yml  # CI: pytest + preflight-смоук (ubuntu/windows)
 ├── test_bot_core.py          # Интеграционный набор (запускается и напрямую)
 ├── test_local_dataset.py     # Оффлайн дата-сет и тест Whisper
 ├── test_data/                # Фикстуры: аудио, фото, JSON-сценарии
 ├── ЗАПУСК_БОТА.cmd           # Запуск в 1 клик на Windows (venv + зависимости)
-├── .env.example              # Шаблон настроек
+├── .env.example              # Шаблон настроек (сам .env с ключами не коммитится)
+├── .gitignore / .gitattributes  # Гигиена репозитория: секреты и БД вне GIT
 ├── requirements.txt          # Зависимости
+├── AGENTS.md                 # Регламент для AI-ассистентов и инварианты проекта
+├── LICENSE                   # MIT
 ├── README.md                 # Этот файл
 └── ИНСТРУКЦИЯ_ПОЛЬЗОВАТЕЛЯ.md  # Пошаговый гайд для не-программиста
 ```
@@ -162,4 +168,4 @@ copy .env.example .env   # затем впишите ключи
 
 ## 📜 Лицензия
 
-MIT — используйте и дорабатывайте свободно. Диетологические рекомендации бота носят информационный характер и не заменяют консультацию врача.
+[MIT](LICENSE) — используйте и дорабатывайте свободно. Диетологические рекомендации бота носят информационный характер и не заменяют консультацию врача.
