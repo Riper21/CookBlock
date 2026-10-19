@@ -20,10 +20,6 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
-    env:
-      # Заглушки вместо .env: CI не должен зависеть от реальных ключей.
-      TELEGRAM_BOT_TOKEN: "1234567890:AA"  # только для preflight-формата
-      DEEPSEEK_API_KEY: "sk-ci-fake-key"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -33,7 +29,14 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
+      # pytest-сьют герметичен сам по себе: tests/conftest.py выставляет
+      # ключи-заглушки ДО импорта config и уводит DB_PATH в tests/.
       - name: Tests
         run: python -X utf8 -m pytest tests -q
       - name: Preflight smoke (no network, no real tokens)
+        env:
+          # Заглушки валидного ФОРМАТА (иначе validate_config отвергнет
+          # токен - и смоук проверит не то): pytest здесь уже не при делах.
+          TELEGRAM_BOT_TOKEN: "1234567890:CI_fake_token_0123456789_abcdefghij"
+          DEEPSEEK_API_KEY: "sk-ci-fake-key"
         run: python -X utf8 main.py --check
