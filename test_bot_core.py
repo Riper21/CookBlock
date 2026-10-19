@@ -10,6 +10,11 @@ import asyncio
 import os
 import sys
 
+# Гигиена БД (AGENTS.md Правило 10): интеграционный прогон работает
+# в отдельной тестовой базе, боевая nutrition_chef.db не затрагивается.
+os.environ.setdefault("DB_PATH", os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                              "tests", "_test_bot_core.db"))
+
 if sys.platform == "win32":
     try:
         sys.stdout.reconfigure(encoding="utf-8")
